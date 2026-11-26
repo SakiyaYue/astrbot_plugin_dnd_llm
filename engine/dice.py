@@ -1,5 +1,8 @@
 import random
 import re
+from typing import Literal, cast
+
+from model.model_dice import DiceInput, DiceResult
 
 DICE_PATTERN = re.compile(
     r"^(?P<count>[1-9]\d*)"
@@ -16,7 +19,7 @@ def dice_roll(count: int, sides: int) -> list[int]:
     return result
 
 
-def dice_parse(dice_str: str) -> dict:
+def dice_parse(dice_str: str) -> DiceInput:
     """Parse a dice command string into structured parameters."""
     m = DICE_PATTERN.match(dice_str.strip())
     if not m:
@@ -26,55 +29,30 @@ def dice_parse(dice_str: str) -> dict:
     if m.group("sign") == "-":
         modifier = -modifier
 
-    return {
-        "count": int(m.group("count")),
-        "sides": int(m.group("sides")),
-        "keep": m.group("keep"),
-        "keep_count": int(m.group("keep_count")) if m.group("keep_count") else None,
-        "modifier": modifier,
-    }
+    return DiceInput(
+        count=int(m.group("count")),
+        sides=int(m.group("sides")),
+        keep=cast(Literal["kh", "kl"] | None, m.group("keep")),
+        keep_count=int(m.group("keep_count")) if m.group("keep_count") else None,
+        modifier=modifier,
+    )
 
 
-def validate_dice(data: dict) -> None:
-    count = int(data["count"])
-    sides = int(data["sides"])
-
-    if count > 100:
-        raise ValueError("单次投掷骰子数量不能超过 100")
-
-    if sides not in {4, 6, 8, 10, 12, 20, 100}:
-        raise ValueError("不支持的骰子面数")
-
-    if data["keep"]:
-        keep_count = int(data["keep_count"])
-
-        if keep_count > count:
-            raise ValueError("保留数量不能超过投掷数量")
-
-
-def dice_tool(data: dict) -> dict:
+def dice_tool(data: DiceInput | dict) -> DiceResult:
     """Roll dice from structured parameters and return results."""
-    validate_dice(data)
+    payload = DiceInput.model_validate(data)  # if data is a dict, convert to DiceInput
 
-    count = int(data["count"])
-    sides = int(data["sides"])
-    keep = data.get("keep")
-    keep_count = data.get("keep_count")
-    modifier = int(data.get("modifier") or 0)
-
-    rolls = dice_roll(count, sides)
+    rolls = dice_roll(payload.count, payload.sides)
 
     kept = rolls
-    if keep == "kh":
-        kept = sorted(rolls, reverse=True)[:keep_count]
-    elif keep == "kl":
-        kept = sorted(rolls)[:keep_count]
+    if payload.keep == "kh":
+        kept = sorted(rolls, reverse=True)[: payload.keep_count]
+    elif payload.keep == "kl":
+        kept = sorted(rolls)[: payload.keep_count]
 
-    result = sum(kept) + modifier
-
-    return {
-        "rolls": rolls,
-        "kept": kept,
-        "modifier": modifier,
-        "result": result,
-    }
+    return DiceResult(
+        rolls=rolls,
+        kept=kept,
+        modifier=payload.modifier,
+        result=sum(kept) + payload.modifier,
+    )
