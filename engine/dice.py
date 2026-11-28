@@ -2,7 +2,7 @@ import random
 import re
 from typing import Literal, cast
 
-from model.model_dice import DiceInput, DiceResult
+from ..model.model_dice import DiceInput, DiceResult
 
 DICE_PATTERN = re.compile(
     r"^(?P<count>[1-9]\d*)"

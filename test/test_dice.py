@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from engine.dice import dice_parse, dice_roll, dice_tool
-from model.model_dice import DiceInput
+from astrbot_plugin_dnd_llm.engine.dice import dice_parse, dice_roll, dice_tool
+from astrbot_plugin_dnd_llm.model.model_dice import DiceInput
 
 # ---------- dice_roll ----------
 
@@ -115,7 +115,7 @@ def test_dice_input_keep_without_keep_count():
 
 
 def test_dice_tool_plain_result(monkeypatch):
-    monkeypatch.setattr("engine.dice.dice_roll", lambda count, sides: [3, 5])
+    monkeypatch.setattr("astrbot_plugin_dnd_llm.engine.dice.dice_roll", lambda count, sides: [3, 5])
     out = dice_tool(_data(count=2, sides=6))
     assert out.rolls == [3, 5]
     assert out.kept == [3, 5]
@@ -124,13 +124,13 @@ def test_dice_tool_plain_result(monkeypatch):
 
 
 def test_dice_tool_modifier(monkeypatch):
-    monkeypatch.setattr("engine.dice.dice_roll", lambda count, sides: [10])
+    monkeypatch.setattr("astrbot_plugin_dnd_llm.engine.dice.dice_roll", lambda count, sides: [10])
     out = dice_tool(_data(count=1, sides=20, modifier=-2))
     assert out.result == 8
 
 
 def test_dice_tool_keep_high(monkeypatch):
-    monkeypatch.setattr("engine.dice.dice_roll", lambda count, sides: [2, 6, 4])
+    monkeypatch.setattr("astrbot_plugin_dnd_llm.engine.dice.dice_roll", lambda count, sides: [2, 6, 4])
     out = dice_tool(_data(count=3, sides=6, keep="kh", keep_count=2))
     assert out.rolls == [2, 6, 4]
     assert out.kept == [6, 4]
@@ -138,7 +138,7 @@ def test_dice_tool_keep_high(monkeypatch):
 
 
 def test_dice_tool_keep_low(monkeypatch):
-    monkeypatch.setattr("engine.dice.dice_roll", lambda count, sides: [2, 6, 4])
+    monkeypatch.setattr("astrbot_plugin_dnd_llm.engine.dice.dice_roll", lambda count, sides: [2, 6, 4])
     out = dice_tool(_data(count=3, sides=6, keep="kl", keep_count=1, modifier=1))
     assert out.kept == [2]
     assert out.result == 3
